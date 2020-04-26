@@ -1,0 +1,26 @@
+{
+    "name": "soosyze-extension/faqsimple",
+    "type": "soosyze-module",
+    "description": "Create your question and answer page.",
+    "version": "1.0",
+    "autoload": {
+        "psr-4": {
+            "SoosyzeExtension\\FaqSimple\\": "/"
+        }
+    },
+    "extra": {
+        "soosyze": {
+            "title": "FaqSimple",
+            "package": "Content",
+            "controller": "SoosyzeExtension\\FaqSimple\\Controller\\FaqSimple",
+            "require": {
+                "Node": "1.0"
+            },
+            "icon": {
+                "name": "fa fa-question",
+                "background-color": "#38b7c1",
+                "color": "#fff"
+            }
+        }
+    }
+}

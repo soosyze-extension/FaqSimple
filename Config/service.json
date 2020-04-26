@@ -1,0 +1,21 @@
+{
+    "faqsimple.install": {
+        "class": "SoosyzeExtension\\FaqSimple\\Install",
+        "hooks": {
+            "install.node": "hookInstallNode"
+        }
+    },
+    "faqsimple.app.hook": {
+        "class": "SoosyzeExtension\\FaqSimple\\Services\\HookApp",
+        "arguments": ["@core"],
+        "hooks": {
+            "app.response.after": "hookResponseAfter"
+        }
+    },
+    "faqsimple.node.hook": {
+        "class": "SoosyzeExtension\\FaqSimple\\Services\\HookNode",
+        "hooks": {
+            "node.entity.faq.show": "hookNodeEntityFaqShow"
+        }
+    }
+}
