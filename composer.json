@@ -18,8 +18,8 @@
             },
             "icon": {
                 "name": "fa fa-question",
-                "background-color": "#38b7c1",
-                "color": "#fff"
+                "background-color": "#7ff6ff",
+                "color": "#005157"
             }
         }
     }

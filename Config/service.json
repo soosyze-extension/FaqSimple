@@ -2,7 +2,7 @@
     "faqsimple.install": {
         "class": "SoosyzeExtension\\FaqSimple\\Install",
         "hooks": {
-            "install.node": "hookInstallNode"
+            "install.user": "hookInstallUser"
         }
     },
     "faqsimple.app.hook": {

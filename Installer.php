@@ -6,7 +6,7 @@ use Psr\Container\ContainerInterface;
 use Queryflatfile\TableBuilder;
 use Soosyze\Components\Template\Template;
 
-class Installer implements \SoosyzeCore\System\Migration
+class Installer extends \SoosyzeCore\System\Migration
 {
     protected $pathContent;
 
@@ -18,6 +18,11 @@ class Installer implements \SoosyzeCore\System\Migration
     public function getDir()
     {
         return __DIR__ . '/composer.json';
+    }
+
+    public function boot()
+    {
+        $this->loadTranslation('fr', __DIR__ . '/Lang/fr/main.json');
     }
 
     public function install(ContainerInterface $ci)
@@ -66,12 +71,16 @@ class Installer implements \SoosyzeCore\System\Migration
 
         $ci->query()
             ->insertInto('node_type', [
-                'node_type', 'node_type_name', 'node_type_description'
+                'node_type',
+                'node_type_name',
+                'node_type_description',
+                'node_type_icon'
             ])
             ->values([
                 'node_type'             => 'page_faq',
                 'node_type_name'        => 'FAQ',
-                'node_type_description' => 'Create your question and answer page'
+                'node_type_description' => 'Create your question and answer page.',
+                'node_type_icon'        => 'fa fa-question'
             ])
             ->execute();
 
@@ -141,6 +150,18 @@ class Installer implements \SoosyzeCore\System\Migration
 
     public function hookInstall(ContainerInterface $ci)
     {
+        $this->hookInstallUser($ci);
+    }
+
+    public function hookInstallUser(ContainerInterface $ci)
+    {
+        if ($ci->module()->has('User')) {
+            $ci->query()
+                ->insertInto('role_permission', [ 'role_id', 'permission_id' ])
+                ->values([ 2, 'node.show.published.page_faq' ])
+                ->values([ 1, 'node.show.published.page_faq' ])
+                ->execute();
+        }
     }
 
     public function uninstall(ContainerInterface $ci)
@@ -170,9 +191,17 @@ class Installer implements \SoosyzeCore\System\Migration
 
     public function hookUninstall(ContainerInterface $ci)
     {
+        $this->hookUninstallUser($ci);
     }
 
-    public function hookInstallNode(ContainerInterface $ci)
+    public function hookUninstallUser(ContainerInterface $ci)
     {
+        if ($ci->module()->has('User')) {
+            $ci->query()
+                ->from('role_permission')
+                ->delete()
+                ->where('permission_id', 'like', '%page_faq%')
+                ->execute();
+        }
     }
 }
