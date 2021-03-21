@@ -6,7 +6,7 @@ use Psr\Container\ContainerInterface;
 use Queryflatfile\TableBuilder;
 use Soosyze\Components\Template\Template;
 
-class Installer extends \SoosyzeCore\System\Migration
+class Extend extends \SoosyzeCore\System\ExtendModule
 {
     protected $pathContent;
 
@@ -15,24 +15,56 @@ class Installer extends \SoosyzeCore\System\Migration
         $this->pathContent = __DIR__ . '/Views/Content/';
     }
 
-    public function getDir()
-    {
-        return __DIR__ . '/composer.json';
-    }
-
     public function boot()
     {
         $this->loadTranslation('fr', __DIR__ . '/Lang/fr/main.json');
     }
 
+    public function getDir()
+    {
+        return __DIR__ . '/composer.json';
+    }
+
+    public function hookInstall(ContainerInterface $ci)
+    {
+        if ($ci->module()->has('User')) {
+            $this->hookInstallUser($ci);
+        }
+    }
+
+    public function hookInstallUser(ContainerInterface $ci)
+    {
+        $ci->query()
+            ->insertInto('role_permission', [ 'role_id', 'permission_id' ])
+            ->values([ 2, 'node.show.published.page_faq' ])
+            ->values([ 1, 'node.show.published.page_faq' ])
+            ->execute();
+    }
+
+    public function hookUninstall(ContainerInterface $ci)
+    {
+        if ($ci->module()->has('User')) {
+            $this->hookUninstallUser($ci);
+        }
+    }
+
+    public function hookUninstallUser(ContainerInterface $ci)
+    {
+        $ci->query()
+            ->from('role_permission')
+            ->delete()
+            ->where('permission_id', 'like', '%page_faq%')
+            ->execute();
+    }
+
     public function install(ContainerInterface $ci)
     {
         $ci->schema()
-            ->createTableIfNotExists('entity_page_faq', function (TableBuilder $table) {
+            ->createTableIfNotExists('entity_page_faq', static function (TableBuilder $table) {
                 $table->increments('page_faq_id')
                 ->text('body');
             })
-            ->createTableIfNotExists('entity_faq', function (TableBuilder $table) {
+            ->createTableIfNotExists('entity_faq', static function (TableBuilder $table) {
                 $table->increments('faq_id')
                 ->integer('page_faq_id')
                 ->integer('weight')->valueDefault(1)
@@ -44,43 +76,29 @@ class Installer extends \SoosyzeCore\System\Migration
             ->insertInto('field', [ 'field_name', 'field_type' ])
             ->values([ 'field_name' => 'question', 'field_type' => 'text' ])
             ->values([ 'field_name' => 'response', 'field_type' => 'textarea' ])
-            ->values([ 'field_name' => 'weight', 'field_type' => 'number' ])
             ->values([ 'field_name' => 'faq', 'field_type' => 'one_to_many' ])
             ->execute();
 
-        $idBody     = $ci->query()
-                ->from('field')
-                ->where('field_name', 'body')
-                ->fetch()[ 'field_id' ];
-        $idRelation = $ci->query()
-                ->from('field')
-                ->where('field_name', 'faq')
-                ->fetch()[ 'field_id' ];
-        $idQuestion = $ci->query()
-                ->from('field')
-                ->where('field_name', 'question')
-                ->fetch()[ 'field_id' ];
-        $idResponse = $ci->query()
-                ->from('field')
-                ->where('field_name', 'response')
-                ->fetch()[ 'field_id' ];
-        $idWeight   = $ci->query()
-                ->from('field')
-                ->where('field_name', 'weight')
-                ->fetch()[ 'field_id' ];
+        $idBody     = $ci->query()->from('field')->where('field_name', 'body')->fetch()[ 'field_id' ];
+        $idRelation = $ci->query()->from('field')->where('field_name', 'faq')->fetch()[ 'field_id' ];
+        $idQuestion = $ci->query()->from('field')->where('field_name', 'question')->fetch()[ 'field_id' ];
+        $idResponse = $ci->query()->from('field')->where('field_name', 'response')->fetch()[ 'field_id' ];
+        $idWeight   = $ci->query()->from('field')->where('field_name', 'weight')->fetch()[ 'field_id' ];
 
         $ci->query()
             ->insertInto('node_type', [
                 'node_type',
                 'node_type_name',
                 'node_type_description',
-                'node_type_icon'
+                'node_type_icon',
+                'node_type_color'
             ])
             ->values([
                 'node_type'             => 'page_faq',
                 'node_type_name'        => 'FAQ',
                 'node_type_description' => 'Create your question and answer page.',
-                'node_type_icon'        => 'fa fa-question'
+                'node_type_icon'        => 'fa fa-question',
+                'node_type_color'       => '#7ff6ff'
             ])
             ->execute();
 
@@ -148,60 +166,9 @@ class Installer extends \SoosyzeCore\System\Migration
             ->execute();
     }
 
-    public function hookInstall(ContainerInterface $ci)
-    {
-        $this->hookInstallUser($ci);
-    }
-
-    public function hookInstallUser(ContainerInterface $ci)
-    {
-        if ($ci->module()->has('User')) {
-            $ci->query()
-                ->insertInto('role_permission', [ 'role_id', 'permission_id' ])
-                ->values([ 2, 'node.show.published.page_faq' ])
-                ->values([ 1, 'node.show.published.page_faq' ])
-                ->execute();
-        }
-    }
-
     public function uninstall(ContainerInterface $ci)
     {
-        $ci->query()->from('node')
-            ->delete()
-            ->where('type', 'page_faq')
-            ->execute();
-        $ci->query()->from('node_type_field')
-            ->delete()
-            ->where('node_type', 'page_faq')
-            ->orWhere('node_type', 'faq')
-            ->execute();
-        $ci->query()->from('node_type')
-            ->delete()
-            ->where('node_type', 'page_faq')
-            ->execute();
-        $ci->query()->from('field')
-            ->delete()
-            ->where('field_name', 'question')
-            ->orWhere('field_name', 'response')
-            ->orWhere('field_name', 'faq')
-            ->execute();
-        $ci->schema()->dropTable('entity_page_faq');
-        $ci->schema()->dropTable('entity_faq');
-    }
-
-    public function hookUninstall(ContainerInterface $ci)
-    {
-        $this->hookUninstallUser($ci);
-    }
-
-    public function hookUninstallUser(ContainerInterface $ci)
-    {
-        if ($ci->module()->has('User')) {
-            $ci->query()
-                ->from('role_permission')
-                ->delete()
-                ->where('permission_id', 'like', '%page_faq%')
-                ->execute();
-        }
+        $ci->node()->deleteAliasByType('page_faq');
+        $ci->node()->deleteByType('page_faq');
     }
 }

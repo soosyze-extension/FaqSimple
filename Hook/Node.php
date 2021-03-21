@@ -1,8 +1,8 @@
 <?php
 
-namespace SoosyzeExtension\FaqSimple\Services;
+namespace SoosyzeExtension\FaqSimple\Hook;
 
-class HookNode
+class Node
 {
     public function hookNodeEntityFaqShow(&$entity)
     {
